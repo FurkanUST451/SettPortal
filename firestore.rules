@@ -1,0 +1,186 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Admin status comes ONLY from the Firebase Auth ID token's custom claim
+    // (`admin: true`), set exclusively by the setAdminRole Cloud Function via
+    // the Admin SDK — never from a Firestore field, which a client could
+    // otherwise attempt to spoof.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // ---------------------------------------------------------------------
+    // Mobile app collections. Every rule below is UNCHANGED from the mobile
+    // app's own firestore.rules except for the added "|| isAdmin()" on reads,
+    // so the admin panel can list/inspect everything. Admins get NO extra
+    // write access here: banning, deleting content, etc. all go through
+    // Cloud Functions using the Admin SDK, which bypasses these rules
+    // entirely and doesn't need a client-side bypass clause.
+    // ---------------------------------------------------------------------
+
+    match /users/{userId} {
+      allow read: if request.auth != null || isAdmin();
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /briefs/{briefId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null
+        && (
+          request.auth.uid == resource.data.ownerId
+          || request.auth.uid in resource.data.sentToIds
+        )
+        || isAdmin();
+    }
+
+    match /freelancers/{userId} {
+      allow read: if request.auth != null || isAdmin();
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /chats/{chatId} {
+      allow get: if request.auth != null || isAdmin();
+
+      // Parantezler doğru — && operatörü || 'den önce gelir
+      allow list: if request.auth != null
+        && (
+          request.auth.uid == resource.data.clientId
+          || request.auth.uid == resource.data.freelancerId
+        )
+        || isAdmin();
+
+      allow create: if request.auth != null
+        && (
+          request.auth.uid == request.resource.data.clientId
+          || request.auth.uid == request.resource.data.freelancerId
+        );
+
+      allow update: if request.auth != null
+        && (
+          request.auth.uid == resource.data.clientId
+          || request.auth.uid == resource.data.freelancerId
+        );
+
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+          && (
+            get(/databases/$(database)/documents/chats/$(chatId)).data.clientId == request.auth.uid
+            || get(/databases/$(database)/documents/chats/$(chatId)).data.freelancerId == request.auth.uid
+          )
+          || isAdmin();
+
+        allow create: if request.auth != null
+          && request.auth.uid == request.resource.data.senderId
+          && (
+            get(/databases/$(database)/documents/chats/$(chatId)).data.clientId == request.auth.uid
+            || get(/databases/$(database)/documents/chats/$(chatId)).data.freelancerId == request.auth.uid
+          );
+
+        allow update, delete: if false;
+      }
+    }
+
+    match /offers/{offerId} {
+      allow get: if request.auth != null
+        && (
+          request.auth.uid == resource.data.senderId
+          || request.auth.uid == resource.data.receiverId
+        )
+        || isAdmin();
+
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.senderId
+        && request.resource.data.status == 'pending';
+
+      // Sadece teklifi alan taraf, sadece 'status' alanını değiştirebilir
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.receiverId
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['accepted', 'rejected'];
+
+      allow list: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /projects/{projectId} {
+      allow get: if request.auth != null
+        && (
+          request.auth.uid == resource.data.clientId
+          || request.auth.uid == resource.data.freelancerId
+        )
+        || isAdmin();
+
+      allow list: if request.auth != null
+        && (
+          request.auth.uid == resource.data.clientId
+          || request.auth.uid == resource.data.freelancerId
+        )
+        || isAdmin();
+
+      allow create: if request.auth != null
+        && (
+          request.auth.uid == request.resource.data.clientId
+          || request.auth.uid == request.resource.data.freelancerId
+        );
+
+      allow update, delete: if false;
+    }
+
+    // ---------------------------------------------------------------------
+    // `works` had NO rules block in the mobile app's firestore.rules (falls
+    // through to default-deny) — flagged back to the mobile team separately.
+    // Rules below are a reasonable inference (public showreel: anyone
+    // authenticated can read; only the owning freelancer can write their own
+    // work) needed so the admin panel can moderate it. Verify field names
+    // match the mobile app's actual implementation before deploying.
+    // ---------------------------------------------------------------------
+    match /works/{workId} {
+      allow read: if request.auth != null || isAdmin();
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.freelancerId;
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.freelancerId
+        // Freelancers can edit their own work's content, but never touch the
+        // admin-only moderation fields — only flagWork/unflagWork/deleteWork
+        // (Cloud Functions, Admin SDK) may set these.
+        && !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['flagged', 'flaggedReason', 'flaggedAt']);
+      allow delete: if request.auth != null
+        && request.auth.uid == resource.data.freelancerId;
+
+      match /comments/{commentId} {
+        allow read: if request.auth != null || isAdmin();
+        allow create: if request.auth != null
+          && request.auth.uid == request.resource.data.userId;
+        allow update: if false;
+        allow delete: if request.auth != null
+          && request.auth.uid == resource.data.userId;
+      }
+
+      match /likes/{likeId} {
+        allow read: if request.auth != null || isAdmin();
+        allow create: if request.auth != null
+          && request.auth.uid == request.resource.data.userId;
+        allow update: if false;
+        allow delete: if request.auth != null
+          && request.auth.uid == resource.data.userId;
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Admin panel only. Append-only audit trail: an admin can log their OWN
+    // actions (adminUid must match the caller), but no one — including
+    // admins — can edit or delete an entry once written, from the client.
+    // ---------------------------------------------------------------------
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.adminUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

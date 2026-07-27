@@ -1,0 +1,20 @@
+{
+  "name": "set-admin-functions",
+  "description": "Cloud Functions for the SET Admin Portal — every destructive/sensitive admin action (ban, delete, flag, admin-role changes) lives here behind the Admin SDK, never done directly from the client.",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "deploy": "firebase deploy --only functions:admin"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  },
+  "private": true
+}
