@@ -79,62 +79,75 @@ class _StatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 4,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.6,
-      children: [
-        _StatCard(
-          label: 'Toplam Kullanıcı',
-          value: c.totalUsers.value,
-          icon: Icons.people_outline,
-          color: AppTheme.primary,
-        ),
-        _StatCard(
-          label: 'Bugünkü Yeni Kayıt',
-          value: c.newUsersToday.value,
-          icon: Icons.person_add_alt_outlined,
-          color: AppTheme.success,
-        ),
-        _StatCard(
-          label: 'Client',
-          value: c.totalClients.value,
-          icon: Icons.badge_outlined,
-          color: AppTheme.primary,
-        ),
-        _StatCard(
-          label: 'Freelancer',
-          value: c.totalFreelancers.value,
-          icon: Icons.camera_alt_outlined,
-          color: const Color(0xFF6C3483),
-        ),
-        _StatCard(
-          label: 'Toplam İş',
-          value: c.totalProjects.value,
-          icon: Icons.work_outline,
-          color: AppTheme.primary,
-        ),
-        _StatCard(
-          label: 'Devam Eden İş',
-          value: c.activeProjects.value,
-          icon: Icons.autorenew,
-          color: AppTheme.warning,
-        ),
-        _StatCard(
-          label: 'Tamamlanan İş',
-          value: c.completedProjects.value,
-          icon: Icons.check_circle_outline,
-          color: AppTheme.success,
-        ),
-        _StatCard(
-          label: 'Flagli İçerik',
-          value: c.flaggedWorks.value,
-          icon: Icons.flag_outlined,
-          color: AppTheme.danger,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = switch (constraints.maxWidth) {
+          > 1000 => 4,
+          > 700 => 2,
+          _ => 1,
+        };
+        return GridView.count(
+          crossAxisCount: crossAxisCount,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.6,
+          children: _cards(),
+        );
+      },
     );
+  }
+
+  List<Widget> _cards() {
+    return [
+      _StatCard(
+        label: 'Toplam Kullanıcı',
+        value: c.totalUsers.value,
+        icon: Icons.people_outline,
+        color: AppTheme.primary,
+      ),
+      _StatCard(
+        label: 'Bugünkü Yeni Kayıt',
+        value: c.newUsersToday.value,
+        icon: Icons.person_add_alt_outlined,
+        color: AppTheme.success,
+      ),
+      _StatCard(
+        label: 'Client',
+        value: c.totalClients.value,
+        icon: Icons.badge_outlined,
+        color: AppTheme.primary,
+      ),
+      _StatCard(
+        label: 'Freelancer',
+        value: c.totalFreelancers.value,
+        icon: Icons.camera_alt_outlined,
+        color: const Color(0xFF6C3483),
+      ),
+      _StatCard(
+        label: 'Toplam İş',
+        value: c.totalProjects.value,
+        icon: Icons.work_outline,
+        color: AppTheme.primary,
+      ),
+      _StatCard(
+        label: 'Devam Eden İş',
+        value: c.activeProjects.value,
+        icon: Icons.autorenew,
+        color: AppTheme.warning,
+      ),
+      _StatCard(
+        label: 'Tamamlanan İş',
+        value: c.completedProjects.value,
+        icon: Icons.check_circle_outline,
+        color: AppTheme.success,
+      ),
+      _StatCard(
+        label: 'Flagli İçerik',
+        value: c.flaggedWorks.value,
+        icon: Icons.flag_outlined,
+        color: AppTheme.danger,
+      ),
+    ];
   }
 }
 

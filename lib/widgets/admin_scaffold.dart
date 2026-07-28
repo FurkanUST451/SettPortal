@@ -17,6 +17,7 @@ const _navItems = [
   _NavItem('Kullanıcılar', Icons.people_outline, AppRoutes.users),
   _NavItem('İşler', Icons.work_outline, AppRoutes.jobs),
   _NavItem('İçerik Moderasyonu', Icons.flag_outlined, AppRoutes.moderation),
+  _NavItem('Bildirimler', Icons.report_outlined, AppRoutes.reports),
   _NavItem('Konuşmalar', Icons.chat_outlined, AppRoutes.conversations),
   _NavItem('Audit Log', Icons.history, AppRoutes.auditLog),
   _NavItem('Güvenlik', Icons.security_outlined, AppRoutes.security),
@@ -63,15 +64,23 @@ class AdminScaffold extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                for (final item in _navItems)
-                  _NavTile(
-                    item: item,
-                    selected:
-                        currentRoute.startsWith(item.route) &&
-                        (item.route != AppRoutes.dashboard ||
-                            currentRoute == AppRoutes.dashboard),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (final item in _navItems)
+                          _NavTile(
+                            item: item,
+                            selected:
+                                currentRoute.startsWith(item.route) &&
+                                (item.route != AppRoutes.dashboard ||
+                                    currentRoute == AppRoutes.dashboard),
+                          ),
+                      ],
+                    ),
                   ),
-                const Spacer(),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(

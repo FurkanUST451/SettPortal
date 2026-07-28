@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../controllers/conversations_controller.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/admin_scaffold.dart';
+import '../../widgets/scrollable_data_table.dart';
 
 class ConversationsListScreen extends StatelessWidget {
   const ConversationsListScreen({super.key});
@@ -39,44 +40,42 @@ class ConversationsListScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Expanded(
-                      child: SingleChildScrollView(
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Client')),
-                            DataColumn(label: Text('Freelancer')),
-                            DataColumn(label: Text('Brief')),
-                            DataColumn(label: Text('Son Mesaj')),
-                            DataColumn(label: Text('Oluşturulma')),
-                          ],
-                          rows: c.chats.map((chat) {
-                            return DataRow(
-                              onSelectChanged: (_) => Get.toNamed(
-                                AppRoutes.conversationDetail,
-                                arguments: chat.id,
+                      child: ScrollableDataTable(
+                        columns: const [
+                          DataColumn(label: Text('Client')),
+                          DataColumn(label: Text('Freelancer')),
+                          DataColumn(label: Text('Brief')),
+                          DataColumn(label: Text('Son Mesaj')),
+                          DataColumn(label: Text('Oluşturulma')),
+                        ],
+                        rows: c.chats.map((chat) {
+                          return DataRow(
+                            onSelectChanged: (_) => Get.toNamed(
+                              AppRoutes.conversationDetail,
+                              arguments: chat.id,
+                            ),
+                            cells: [
+                              DataCell(Text(chat.clientName)),
+                              DataCell(Text(chat.freelancerName)),
+                              DataCell(Text(chat.briefTitle)),
+                              DataCell(
+                                Text(
+                                  chat.lastMessage?.isNotEmpty == true
+                                      ? chat.lastMessage!
+                                      : '—',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              cells: [
-                                DataCell(Text(chat.clientName)),
-                                DataCell(Text(chat.freelancerName)),
-                                DataCell(Text(chat.briefTitle)),
-                                DataCell(
-                                  Text(
-                                    chat.lastMessage?.isNotEmpty == true
-                                        ? chat.lastMessage!
-                                        : '—',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                              DataCell(
+                                Text(
+                                  chat.createdAt != null
+                                      ? dateFmt.format(chat.createdAt!)
+                                      : '—',
                                 ),
-                                DataCell(
-                                  Text(
-                                    chat.createdAt != null
-                                        ? dateFmt.format(chat.createdAt!)
-                                        : '—',
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                       ),
                     ),
                     if (c.hasMore.value)

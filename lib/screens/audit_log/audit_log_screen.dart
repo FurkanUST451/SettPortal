@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../controllers/audit_log_controller.dart';
 import '../../core/constants.dart';
 import '../../widgets/admin_scaffold.dart';
+import '../../widgets/scrollable_data_table.dart';
 
 const _actionLabels = {
   AuditAction.viewConversation: 'Konuşma Görüntüleme',
@@ -33,10 +34,11 @@ class AuditLogScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text('Aksiyon:'),
-              const SizedBox(width: 12),
               Obx(
                 () => DropdownButton<String?>(
                   value: c.actionFilter.value,
@@ -64,39 +66,37 @@ class AuditLogScreen extends StatelessWidget {
                 return const Center(child: Text('Kayıt bulunamadı.'));
               }
               return Card(
-                child: SingleChildScrollView(
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Tarih')),
-                      DataColumn(label: Text('Admin')),
-                      DataColumn(label: Text('Aksiyon')),
-                      DataColumn(label: Text('Hedef')),
-                    ],
-                    rows: entries.map((e) {
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            Text(
-                              e.createdAt != null
-                                  ? dateFmt.format(e.createdAt!)
-                                  : '—',
-                            ),
+                child: ScrollableDataTable(
+                  columns: const [
+                    DataColumn(label: Text('Tarih')),
+                    DataColumn(label: Text('Admin')),
+                    DataColumn(label: Text('Aksiyon')),
+                    DataColumn(label: Text('Hedef')),
+                  ],
+                  rows: entries.map((e) {
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          Text(
+                            e.createdAt != null
+                                ? dateFmt.format(e.createdAt!)
+                                : '—',
                           ),
-                          DataCell(Text(e.adminEmail ?? e.adminUid)),
-                          DataCell(Text(_actionLabels[e.action] ?? e.action)),
-                          DataCell(
-                            Text(
-                              [
-                                e.targetType,
-                                e.targetId,
-                              ].where((s) => s != null).join(': '),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                        ),
+                        DataCell(Text(e.adminEmail ?? e.adminUid)),
+                        DataCell(Text(_actionLabels[e.action] ?? e.action)),
+                        DataCell(
+                          Text(
+                            [
+                              e.targetType,
+                              e.targetId,
+                            ].where((s) => s != null).join(': '),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
                 ),
               );
             }),

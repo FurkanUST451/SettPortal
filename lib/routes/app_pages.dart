@@ -9,6 +9,7 @@ import '../screens/jobs/job_detail_screen.dart';
 import '../screens/jobs/jobs_list_screen.dart';
 import '../screens/moderation/moderation_list_screen.dart';
 import '../screens/moderation/work_detail_screen.dart';
+import '../screens/reports/reports_list_screen.dart';
 import '../screens/security/security_settings_screen.dart';
 import '../screens/users/user_detail_screen.dart';
 import '../screens/users/users_list_screen.dart';
@@ -55,6 +56,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.workDetail,
       page: () => const WorkDetailScreen(),
+      middlewares: [AdminGuardMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.reports,
+      page: () => const ReportsListScreen(),
       middlewares: [AdminGuardMiddleware()],
     ),
     GetPage(

@@ -7,6 +7,7 @@ class AppRoutes {
   static const jobDetail = '/jobs/detail';
   static const moderation = '/moderation';
   static const workDetail = '/moderation/detail';
+  static const reports = '/reports';
   static const conversations = '/conversations';
   static const conversationDetail = '/conversations/detail';
   static const auditLog = '/audit-log';

@@ -2,9 +2,11 @@ import 'package:get/get.dart';
 
 import '../models/work.dart';
 import '../repositories/work_repository.dart';
+import '../services/functions_service.dart';
 
 class ModerationController extends GetxController {
   final _repo = WorkRepository();
+  final _functions = FunctionsService();
 
   final RxList<Work> works = <Work>[].obs;
   final RxBool loading = false.obs;
@@ -12,6 +14,9 @@ class ModerationController extends GetxController {
   final RxBool hasMore = true.obs;
   final RxnString typeFilter = RxnString();
   final RxBool flaggedOnly = false.obs;
+
+  final RxSet<String> selectedIds = <String>{}.obs;
+  final RxBool bulkActionLoading = false.obs;
 
   @override
   void onInit() {
@@ -53,5 +58,54 @@ class ModerationController extends GetxController {
   void setFlaggedOnly(bool value) {
     flaggedOnly.value = value;
     loadFirstPage();
+  }
+
+  void toggleSelection(String workId, bool? selected) {
+    if (selected == true) {
+      selectedIds.add(workId);
+    } else {
+      selectedIds.remove(workId);
+    }
+  }
+
+  void clearSelection() => selectedIds.clear();
+
+  Future<void> bulkFlag(String reason) async {
+    bulkActionLoading.value = true;
+    try {
+      for (final id in selectedIds.toList()) {
+        await _functions.flagWork(workId: id, reason: reason);
+      }
+      selectedIds.clear();
+      await loadFirstPage();
+    } finally {
+      bulkActionLoading.value = false;
+    }
+  }
+
+  Future<void> bulkUnflag() async {
+    bulkActionLoading.value = true;
+    try {
+      for (final id in selectedIds.toList()) {
+        await _functions.unflagWork(workId: id);
+      }
+      selectedIds.clear();
+      await loadFirstPage();
+    } finally {
+      bulkActionLoading.value = false;
+    }
+  }
+
+  Future<void> bulkDelete() async {
+    bulkActionLoading.value = true;
+    try {
+      for (final id in selectedIds.toList()) {
+        await _functions.deleteWork(workId: id);
+      }
+      selectedIds.clear();
+      await loadFirstPage();
+    } finally {
+      bulkActionLoading.value = false;
+    }
   }
 }

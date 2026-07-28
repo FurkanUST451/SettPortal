@@ -16,6 +16,9 @@ class UsersController extends GetxController {
   final RxnBool bannedFilter = RxnBool();
   final RxString searchQuery = ''.obs;
 
+  final RxSet<String> selectedIds = <String>{}.obs;
+  final RxBool bulkActionLoading = false.obs;
+
   bool get _isSearching => searchQuery.value.trim().isNotEmpty;
 
   @override
@@ -82,5 +85,44 @@ class UsersController extends GetxController {
   Future<void> unbanUser(String uid) async {
     await _functions.unbanUser(uid: uid);
     await loadFirstPage();
+  }
+
+  void toggleSelection(String uid, bool? selected) {
+    if (selected == true) {
+      selectedIds.add(uid);
+    } else {
+      selectedIds.remove(uid);
+    }
+  }
+
+  void clearSelection() => selectedIds.clear();
+
+  /// Calls the same per-user `banUser`/`unbanUser` Cloud Function once per
+  /// selected id — each call still gets its own audit log entry, there's no
+  /// separate "bulk" Cloud Function to keep this in sync with.
+  Future<void> bulkBan(String reason) async {
+    bulkActionLoading.value = true;
+    try {
+      for (final uid in selectedIds.toList()) {
+        await _functions.banUser(uid: uid, reason: reason);
+      }
+      selectedIds.clear();
+      await loadFirstPage();
+    } finally {
+      bulkActionLoading.value = false;
+    }
+  }
+
+  Future<void> bulkUnban() async {
+    bulkActionLoading.value = true;
+    try {
+      for (final uid in selectedIds.toList()) {
+        await _functions.unbanUser(uid: uid);
+      }
+      selectedIds.clear();
+      await loadFirstPage();
+    } finally {
+      bulkActionLoading.value = false;
+    }
   }
 }

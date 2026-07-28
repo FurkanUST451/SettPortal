@@ -12,6 +12,15 @@ class FsCollections {
   static const comments = 'comments'; // subcollection of works
   static const likes = 'likes'; // subcollection of works
   static const auditLogs = 'auditLogs';
+  static const reports = 'reports';
+}
+
+/// Values of `reports.status`, written by the mobile app (create) and by
+/// admins reviewing a report (update).
+class ReportStatus {
+  static const pending = 'pending';
+  static const reviewed = 'reviewed';
+  static const dismissed = 'dismissed';
 }
 
 /// Business role stored on `users.role` by the mobile app. Not an admin permission.

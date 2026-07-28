@@ -41,6 +41,18 @@ class StatusBadge extends StatelessWidget {
         : const StatusBadge(label: 'Normal', color: AppTheme.success);
   }
 
+  factory StatusBadge.reportStatus(String status) {
+    switch (status) {
+      case 'reviewed':
+        return const StatusBadge(label: 'İncelendi', color: AppTheme.success);
+      case 'dismissed':
+        return const StatusBadge(label: 'Reddedildi', color: Colors.grey);
+      case 'pending':
+      default:
+        return const StatusBadge(label: 'Bekliyor', color: AppTheme.warning);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(

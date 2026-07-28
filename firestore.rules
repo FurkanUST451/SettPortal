@@ -172,6 +172,19 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------------
+    // `reports` had NO rules block (falls through to default-deny), same
+    // situation as `works` above — the mobile app's report-a-post feature
+    // writes here through some path outside this ruleset (likely a Cloud
+    // Function using the Admin SDK). Admin panel only needs read access to
+    // list/inspect reports; verify with the mobile team before ever adding
+    // a client-side write rule.
+    // ---------------------------------------------------------------------
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------------
     // Admin panel only. Append-only audit trail: an admin can log their OWN
     // actions (adminUid must match the caller), but no one — including
     // admins — can edit or delete an entry once written, from the client.

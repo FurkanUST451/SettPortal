@@ -6,6 +6,7 @@ import '../../controllers/jobs_controller.dart';
 import '../../core/constants.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/admin_scaffold.dart';
+import '../../widgets/scrollable_data_table.dart';
 import '../../widgets/status_badge.dart';
 
 class JobsListScreen extends StatelessWidget {
@@ -22,10 +23,11 @@ class JobsListScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          Wrap(
+            spacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               const Text('Durum:'),
-              const SizedBox(width: 12),
               Obx(
                 () => DropdownButton<String?>(
                   value: c.statusFilter.value,
@@ -67,43 +69,41 @@ class JobsListScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Expanded(
-                      child: SingleChildScrollView(
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Başlık')),
-                            DataColumn(label: Text('Bütçe')),
-                            DataColumn(label: Text('Oluşturulma')),
-                            DataColumn(label: Text('Teslim Tarihi')),
-                            DataColumn(label: Text('Durum')),
-                          ],
-                          rows: c.projects.map((p) {
-                            return DataRow(
-                              onSelectChanged: (_) => Get.toNamed(
-                                AppRoutes.jobDetail,
-                                arguments: p.id,
+                      child: ScrollableDataTable(
+                        columns: const [
+                          DataColumn(label: Text('Başlık')),
+                          DataColumn(label: Text('Bütçe')),
+                          DataColumn(label: Text('Oluşturulma')),
+                          DataColumn(label: Text('Teslim Tarihi')),
+                          DataColumn(label: Text('Durum')),
+                        ],
+                        rows: c.projects.map((p) {
+                          return DataRow(
+                            onSelectChanged: (_) => Get.toNamed(
+                              AppRoutes.jobDetail,
+                              arguments: p.id,
+                            ),
+                            cells: [
+                              DataCell(Text(p.title.isEmpty ? '—' : p.title)),
+                              DataCell(Text(currencyFmt.format(p.budget))),
+                              DataCell(
+                                Text(
+                                  p.createdAt != null
+                                      ? dateFmt.format(p.createdAt!)
+                                      : '—',
+                                ),
                               ),
-                              cells: [
-                                DataCell(Text(p.title.isEmpty ? '—' : p.title)),
-                                DataCell(Text(currencyFmt.format(p.budget))),
-                                DataCell(
-                                  Text(
-                                    p.createdAt != null
-                                        ? dateFmt.format(p.createdAt!)
-                                        : '—',
-                                  ),
+                              DataCell(
+                                Text(
+                                  p.deadline != null
+                                      ? dateFmt.format(p.deadline!)
+                                      : '—',
                                 ),
-                                DataCell(
-                                  Text(
-                                    p.deadline != null
-                                        ? dateFmt.format(p.deadline!)
-                                        : '—',
-                                  ),
-                                ),
-                                DataCell(StatusBadge.projectStatus(p.status)),
-                              ],
-                            );
-                          }).toList(),
-                        ),
+                              ),
+                              DataCell(StatusBadge.projectStatus(p.status)),
+                            ],
+                          );
+                        }).toList(),
                       ),
                     ),
                     if (c.hasMore.value)
