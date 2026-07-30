@@ -56,6 +56,15 @@ class ReportsListScreen extends StatelessWidget {
               if (c.loading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
+              if (c.error.value != null) {
+                return Center(
+                  child: Text(
+                    'Bildirimler yüklenemedi: ${c.error.value}',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
               final reports = c.filtered;
               if (reports.isEmpty) {
                 return const Center(child: Text('Bildirim bulunamadı.'));

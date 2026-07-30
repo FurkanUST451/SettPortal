@@ -11,6 +11,7 @@ class ReportsController extends GetxController {
 
   final RxList<Report> reports = <Report>[].obs;
   final RxBool loading = true.obs;
+  final RxnString error = RxnString();
   final RxnString statusFilter = RxnString(ReportStatus.pending);
 
   StreamSubscription? _sub;
@@ -18,10 +19,17 @@ class ReportsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _sub = _service.watchRecent().listen((snap) {
-      reports.assignAll(snap.docs.map(Report.fromFirestore));
-      loading.value = false;
-    });
+    _sub = _service.watchRecent().listen(
+      (snap) {
+        reports.assignAll(snap.docs.map(Report.fromFirestore));
+        loading.value = false;
+        error.value = null;
+      },
+      onError: (e) {
+        loading.value = false;
+        error.value = e.toString();
+      },
+    );
   }
 
   @override

@@ -2,6 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     // Admin status comes ONLY from the Firebase Auth ID token's custom claim
     // (`admin: true`), set exclusively by the setAdminRole Cloud Function via
     // the Admin SDK — never from a Firestore field, which a client could
@@ -11,12 +15,18 @@ service cloud.firestore {
     }
 
     // ---------------------------------------------------------------------
-    // Mobile app collections. Every rule below is UNCHANGED from the mobile
-    // app's own firestore.rules except for the added "|| isAdmin()" on reads,
-    // so the admin panel can list/inspect everything. Admins get NO extra
-    // write access here: banning, deleting content, etc. all go through
-    // Cloud Functions using the Admin SDK, which bypasses these rules
-    // entirely and doesn't need a client-side bypass clause.
+    // Everything below mirrors the mobile app's own firestore.rules (source
+    // of truth for create/update validation) with "|| isAdmin()" added to
+    // reads so the admin panel can list/inspect everything. Admins get NO
+    // extra write access here: banning, deleting content, etc. all go
+    // through Cloud Functions using the Admin SDK, which bypasses these
+    // rules entirely and doesn't need a client-side bypass clause.
+    //
+    // IMPORTANT: if the mobile team redeploys their firestore.rules without
+    // the "|| isAdmin()" additions below, it will silently overwrite this
+    // file's admin bypasses (as happened once already) and break every
+    // admin-panel screen with permission-denied. Keep this file in sync
+    // with the mobile app's rules and coordinate deploys.
     // ---------------------------------------------------------------------
 
     match /users/{userId} {
@@ -130,58 +140,112 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // ---------------------------------------------------------------------
-    // `works` had NO rules block in the mobile app's firestore.rules (falls
-    // through to default-deny) — flagged back to the mobile team separately.
-    // Rules below are a reasonable inference (public showreel: anyone
-    // authenticated can read; only the owning freelancer can write their own
-    // work) needed so the admin panel can moderate it. Verify field names
-    // match the mobile app's actual implementation before deploying.
-    // ---------------------------------------------------------------------
+    // ---- Keşfet (Discover) ----
+    // "works" = keşfette gösterilen post/video kartları.
     match /works/{workId} {
-      allow read: if request.auth != null || isAdmin();
-      allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.freelancerId;
-      allow update: if request.auth != null
-        && request.auth.uid == resource.data.freelancerId
-        // Freelancers can edit their own work's content, but never touch the
-        // admin-only moderation fields — only flagWork/unflagWork/deleteWork
-        // (Cloud Functions, Admin SDK) may set these.
-        && !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(['flagged', 'flaggedReason', 'flaggedAt']);
-      allow delete: if request.auth != null
-        && request.auth.uid == resource.data.freelancerId;
+      allow read: if isSignedIn() || isAdmin();
 
-      match /comments/{commentId} {
-        allow read: if request.auth != null || isAdmin();
-        allow create: if request.auth != null
-          && request.auth.uid == request.resource.data.userId;
+      allow create: if isSignedIn()
+        && request.resource.data.id == workId
+        && request.resource.data.freelancerId == request.auth.uid
+        && request.resource.data.createdAt is string
+        && request.resource.data.createdAt.size() > 0
+        && request.resource.data.mediaUrl is string
+        && request.resource.data.mediaUrl.size() > 0
+        && request.resource.data.isVideo is bool
+        && request.resource.data.type in ['video', 'photo', 'cgiVfx', 'graphic', 'sound']
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.studio is string
+        && request.resource.data.studio.size() > 0
+        && request.resource.data.likes == 0
+        && request.resource.data.comments == 0;
+
+      // Sahibi sadece başlık/imza/açıklama gibi düzenlenebilir alanları değiştirebilir.
+      // likes/comments sayaçları buradan değil, yalnızca Admin SDK (Cloud Functions,
+      // bkz. functions/index.js — onWorkLikeCreated/Deleted, onWorkCommentCreated/Deleted)
+      // üzerinden güncellenir. Admin panelinin flagWork/unflagWork/deleteWork Cloud
+      // Function'ları da Admin SDK ile çalıştığından bu client kuralını bypass eder.
+      allow update: if isSignedIn()
+        && resource.data.freelancerId == request.auth.uid
+        && request.resource.data.freelancerId == resource.data.freelancerId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'studio', 'description'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.studio is string
+        && request.resource.data.studio.size() > 0;
+
+      allow delete: if isSignedIn() && resource.data.freelancerId == request.auth.uid;
+
+      // Bir kullanıcının bir post'u yalnızca bir kez beğenebilmesi için
+      // like doküman id'si = kullanıcının uid'i (alt koleksiyon zaten postId'ye göre scope'lu).
+      match /likes/{likeId} {
+        allow read: if isSignedIn() || isAdmin();
+
+        allow create: if isSignedIn()
+          && likeId == request.auth.uid
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.createdAt is string
+          && request.resource.data.createdAt.size() > 0
+          && request.resource.data.keys().hasOnly(['userId', 'createdAt']);
+
+        allow delete: if isSignedIn() && likeId == request.auth.uid;
+
         allow update: if false;
-        allow delete: if request.auth != null
-          && request.auth.uid == resource.data.userId;
       }
 
-      match /likes/{likeId} {
-        allow read: if request.auth != null || isAdmin();
-        allow create: if request.auth != null
-          && request.auth.uid == request.resource.data.userId;
-        allow update: if false;
-        allow delete: if request.auth != null
-          && request.auth.uid == resource.data.userId;
+      match /comments/{commentId} {
+        allow read: if isSignedIn() || isAdmin();
+
+        allow create: if isSignedIn()
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.createdAt is string
+          && request.resource.data.createdAt.size() > 0;
+
+        allow update: if isSignedIn()
+          && resource.data.authorId == request.auth.uid
+          && request.resource.data.authorId == resource.data.authorId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500;
+
+        allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
       }
     }
 
-    // ---------------------------------------------------------------------
-    // `reports` had NO rules block (falls through to default-deny), same
-    // situation as `works` above — the mobile app's report-a-post feature
-    // writes here through some path outside this ruleset (likely a Cloud
-    // Function using the Admin SDK). Admin panel only needs read access to
-    // list/inspect reports; verify with the mobile team before ever adding
-    // a client-side write rule.
-    // ---------------------------------------------------------------------
+    // Rate limit sayaçları yalnızca Cloud Functions (Admin SDK) tarafından okunup yazılır.
+    // Admin SDK rules'ı bypass eder; bu blok client erişimini açıkça kapatır.
+    match /rate_limits/{docId} {
+      allow read, write: if false;
+    }
+
+    // İçerik şikayetleri (ör. Keşfet gönderisi, ileride sohbet mesajı vb.).
+    // Client sadece kendi adına, tek bir şikayet dokümanı oluşturabilir;
+    // moderasyon incelemesi (admin panel) admin claim'i olan hesaplara açık,
+    // update/delete client'a tamamen kapalı (durum değişikliği ileride bir
+    // Cloud Function üzerinden yapılacak).
     match /reports/{reportId} {
+      allow create: if isSignedIn()
+        && request.resource.data.reporter.userId == request.auth.uid
+        && request.resource.data.type is string
+        && request.resource.data.type.size() > 0
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.size() > 0
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() > 0
+        && request.resource.data.reason.size() <= 500
+        && request.resource.data.status == 'pending'
+        && request.resource.data.reporter is map
+        && request.resource.data.target is map;
+
       allow read: if isAdmin();
-      allow write: if false;
+      allow update, delete: if false;
     }
 
     // ---------------------------------------------------------------------

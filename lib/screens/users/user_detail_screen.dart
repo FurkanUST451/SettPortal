@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../controllers/user_detail_controller.dart';
 import '../../core/theme.dart';
+import '../../models/chat.dart';
+import '../../routes/app_routes.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../widgets/confirm_action_dialog.dart';
 import '../../widgets/status_badge.dart';
@@ -200,6 +202,64 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     ),
                   ),
                 ],
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Konuşmalar',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Bu kullanıcının dahil olduğu sohbetler. Açılan '
+                          'konuşmalar audit log\'a kaydedilir.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Obx(() {
+                          if (controller.chatsLoading.value) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          if (controller.chats.isEmpty) {
+                            return const Text(
+                              'Bu kullanıcıya ait sohbet bulunamadı.',
+                              style: TextStyle(color: Colors.black54),
+                            );
+                          }
+                          return Column(
+                            children: controller.chats
+                                .map(
+                                  (chat) =>
+                                      _ChatRow(chat: chat, currentUid: uid),
+                                )
+                                .toList(),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -242,6 +302,68 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
       confirmColor: currentlyAdmin ? AppTheme.danger : AppTheme.primary,
     );
     if (confirmed != null) await controller.toggleAdmin();
+  }
+}
+
+class _ChatRow extends StatelessWidget {
+  final Chat chat;
+  final String currentUid;
+  const _ChatRow({required this.chat, required this.currentUid});
+
+  @override
+  Widget build(BuildContext context) {
+    final peerName = chat.clientId == currentUid
+        ? chat.freelancerName
+        : chat.clientName;
+    final dateFmt = DateFormat('dd.MM.yyyy HH:mm');
+
+    return InkWell(
+      onTap: () => Get.toNamed(AppRoutes.conversationDetail, arguments: chat.id),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    peerName.isEmpty ? 'Bilinmeyen kullanıcı' : peerName,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (chat.briefTitle.isNotEmpty)
+                    Text(
+                      chat.briefTitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  if (chat.lastMessage?.isNotEmpty == true)
+                    Text(
+                      chat.lastMessage!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Text(
+              (chat.lastMessageAt ?? chat.createdAt) != null
+                  ? dateFmt.format((chat.lastMessageAt ?? chat.createdAt)!)
+                  : '—',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, size: 18, color: Colors.black38),
+          ],
+        ),
+      ),
+    );
   }
 }
 

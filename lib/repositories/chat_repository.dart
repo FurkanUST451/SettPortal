@@ -29,6 +29,28 @@ class ChatRepository {
     return doc.exists ? Chat.fromFirestore(doc) : null;
   }
 
+  /// A user is either the client OR the freelancer side of a chat, never
+  /// both fields at once, so two single-field queries (Firestore can't OR
+  /// across different fields in one query) and a merge is enough — no dedupe
+  /// needed.
+  Future<List<Chat>> fetchForUser(String uid) async {
+    final results = await Future.wait([
+      _col.where('clientId', isEqualTo: uid).get(),
+      _col.where('freelancerId', isEqualTo: uid).get(),
+    ]);
+    final chats = [
+      ...results[0].docs.map(Chat.fromFirestore),
+      ...results[1].docs.map(Chat.fromFirestore),
+    ];
+    chats.sort((a, b) {
+      final aDate = a.lastMessageAt ?? a.createdAt;
+      final bDate = b.lastMessageAt ?? b.createdAt;
+      if (aDate == null || bDate == null) return 0;
+      return bDate.compareTo(aDate);
+    });
+    return chats;
+  }
+
   Stream<List<ChatMessage>> watchMessages(String chatId) {
     return _col
         .doc(chatId)
