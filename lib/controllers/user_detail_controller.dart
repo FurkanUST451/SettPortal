@@ -2,9 +2,13 @@ import 'package:get/get.dart';
 
 import '../core/constants.dart';
 import '../models/app_user.dart';
+import '../models/brief.dart';
 import '../models/chat.dart';
 import '../models/freelancer_profile.dart';
+import '../models/offer.dart';
+import '../models/project.dart';
 import '../repositories/chat_repository.dart';
+import '../repositories/project_repository.dart';
 import '../repositories/user_repository.dart';
 import '../services/audit_log_service.dart';
 import '../services/functions_service.dart';
@@ -15,6 +19,7 @@ class UserDetailController extends GetxController {
 
   final _repo = UserRepository();
   final _chatRepo = ChatRepository();
+  final _projectRepo = ProjectRepository();
   final _functions = FunctionsService();
   final _auditLog = AuditLogService();
 
@@ -28,18 +33,48 @@ class UserDetailController extends GetxController {
   final RxList<Chat> chats = <Chat>[].obs;
   final RxBool chatsLoading = true.obs;
 
+  final RxList<Brief> briefs = <Brief>[].obs;
+  final RxBool briefsLoading = true.obs;
+
+  final RxList<Offer> offers = <Offer>[].obs;
+  final RxBool offersLoading = true.obs;
+
+  final RxList<Project> projects = <Project>[].obs;
+  final RxBool projectsLoading = true.obs;
+
   @override
   void onInit() {
     super.onInit();
     load();
     _loadAdminStatus();
     _loadChats();
+    _loadBriefs();
+    _loadOffers();
+    _loadProjects();
   }
 
   Future<void> _loadChats() async {
     chatsLoading.value = true;
     chats.assignAll(await _chatRepo.fetchForUser(uid));
     chatsLoading.value = false;
+  }
+
+  Future<void> _loadBriefs() async {
+    briefsLoading.value = true;
+    briefs.assignAll(await _projectRepo.fetchBriefsForOwner(uid));
+    briefsLoading.value = false;
+  }
+
+  Future<void> _loadOffers() async {
+    offersLoading.value = true;
+    offers.assignAll(await _projectRepo.fetchOffersForUser(uid));
+    offersLoading.value = false;
+  }
+
+  Future<void> _loadProjects() async {
+    projectsLoading.value = true;
+    projects.assignAll(await _projectRepo.fetchProjectsForUser(uid));
+    projectsLoading.value = false;
   }
 
   Future<void> load() async {

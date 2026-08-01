@@ -5,6 +5,8 @@ class AppRoutes {
   static const userDetail = '/users/detail';
   static const jobs = '/jobs';
   static const jobDetail = '/jobs/detail';
+  static const briefDetail = '/briefs/detail';
+  static const offerDetail = '/offers/detail';
   static const moderation = '/moderation';
   static const workDetail = '/moderation/detail';
   static const reports = '/reports';

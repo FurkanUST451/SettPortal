@@ -4,7 +4,10 @@ import 'package:intl/intl.dart';
 
 import '../../controllers/user_detail_controller.dart';
 import '../../core/theme.dart';
+import '../../models/brief.dart';
 import '../../models/chat.dart';
+import '../../models/offer.dart';
+import '../../models/project.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../widgets/confirm_action_dialog.dart';
@@ -210,6 +213,144 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
+                          'Briefler',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Obx(() {
+                          if (controller.briefsLoading.value) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          if (controller.briefs.isEmpty) {
+                            return const Text(
+                              'Bu kullanıcıya ait brief bulunamadı.',
+                              style: TextStyle(color: Colors.black54),
+                            );
+                          }
+                          return Column(
+                            children: controller.briefs
+                                .map((b) => _BriefRow(brief: b))
+                                .toList(),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'İş Teklifleri',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Obx(() {
+                          if (controller.offersLoading.value) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          if (controller.offers.isEmpty) {
+                            return const Text(
+                              'Bu kullanıcıya ait iş teklifi bulunamadı.',
+                              style: TextStyle(color: Colors.black54),
+                            );
+                          }
+                          return Column(
+                            children: controller.offers
+                                .map((o) => _OfferRow(offer: o))
+                                .toList(),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Aktif İşler',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Obx(() {
+                          if (controller.projectsLoading.value) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          if (controller.projects.isEmpty) {
+                            return const Text(
+                              'Bu kullanıcıya ait iş bulunamadı.',
+                              style: TextStyle(color: Colors.black54),
+                            );
+                          }
+                          return Column(
+                            children: controller.projects
+                                .map((p) => _ProjectRow(project: p))
+                                .toList(),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
                           'Konuşmalar',
                           style: TextStyle(
                             fontSize: 16,
@@ -355,6 +496,155 @@ class _ChatRow extends StatelessWidget {
             Text(
               (chat.lastMessageAt ?? chat.createdAt) != null
                   ? dateFmt.format((chat.lastMessageAt ?? chat.createdAt)!)
+                  : '—',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, size: 18, color: Colors.black38),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BriefRow extends StatelessWidget {
+  final Brief brief;
+  const _BriefRow({required this.brief});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFmt = DateFormat('dd.MM.yyyy HH:mm');
+    return InkWell(
+      onTap: () => Get.toNamed(AppRoutes.briefDetail, arguments: brief.id),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    brief.title.isEmpty ? 'Başlıksız Brief' : brief.title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (brief.category.isNotEmpty)
+                    Text(
+                      brief.category,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            StatusBadge.briefStatus(brief.status),
+            const SizedBox(width: 12),
+            Text(
+              brief.createdAt != null
+                  ? dateFmt.format(brief.createdAt!)
+                  : '—',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, size: 18, color: Colors.black38),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OfferRow extends StatelessWidget {
+  final Offer offer;
+  const _OfferRow({required this.offer});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFmt = DateFormat('dd.MM.yyyy HH:mm');
+    final currencyFmt = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
+    return InkWell(
+      onTap: () => Get.toNamed(AppRoutes.offerDetail, arguments: offer.id),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    offer.briefTitle.isEmpty
+                        ? 'Başlıksız Teklif'
+                        : offer.briefTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    currencyFmt.format(offer.amount),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            StatusBadge.offerStatus(offer.status),
+            const SizedBox(width: 12),
+            Text(
+              offer.createdAt != null
+                  ? dateFmt.format(offer.createdAt!)
+                  : '—',
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, size: 18, color: Colors.black38),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectRow extends StatelessWidget {
+  final Project project;
+  const _ProjectRow({required this.project});
+
+  @override
+  Widget build(BuildContext context) {
+    final dateFmt = DateFormat('dd.MM.yyyy HH:mm');
+    final currencyFmt = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
+    return InkWell(
+      onTap: () => Get.toNamed(AppRoutes.jobDetail, arguments: project.id),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    project.title.isEmpty ? 'Başlıksız İş' : project.title,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    currencyFmt.format(project.budget),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            StatusBadge.projectStatus(project.status),
+            const SizedBox(width: 12),
+            Text(
+              project.createdAt != null
+                  ? dateFmt.format(project.createdAt!)
                   : '—',
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),

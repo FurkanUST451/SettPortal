@@ -52,4 +52,51 @@ class ProjectRepository {
     final agg = await _col.where('status', isEqualTo: status).count().get();
     return agg.count ?? 0;
   }
+
+  Future<List<Brief>> fetchBriefsForOwner(String uid) async {
+    final snap = await _briefCol.where('ownerId', isEqualTo: uid).get();
+    final briefs = snap.docs.map(Brief.fromFirestore).toList();
+    briefs.sort((a, b) {
+      if (a.createdAt == null || b.createdAt == null) return 0;
+      return b.createdAt!.compareTo(a.createdAt!);
+    });
+    return briefs;
+  }
+
+  /// A user is either the sender OR receiver of an offer, never both at
+  /// once, so two single-field queries and a merge (same pattern as
+  /// [ChatRepository.fetchForUser]) is enough — no dedupe needed.
+  Future<List<Offer>> fetchOffersForUser(String uid) async {
+    final results = await Future.wait([
+      _offerCol.where('senderId', isEqualTo: uid).get(),
+      _offerCol.where('receiverId', isEqualTo: uid).get(),
+    ]);
+    final offers = [
+      ...results[0].docs.map(Offer.fromFirestore),
+      ...results[1].docs.map(Offer.fromFirestore),
+    ];
+    offers.sort((a, b) {
+      if (a.createdAt == null || b.createdAt == null) return 0;
+      return b.createdAt!.compareTo(a.createdAt!);
+    });
+    return offers;
+  }
+
+  /// A user is either the client OR the freelancer side of a project, never
+  /// both at once, so two single-field queries and a merge is enough.
+  Future<List<Project>> fetchProjectsForUser(String uid) async {
+    final results = await Future.wait([
+      _col.where('clientId', isEqualTo: uid).get(),
+      _col.where('freelancerId', isEqualTo: uid).get(),
+    ]);
+    final projects = [
+      ...results[0].docs.map(Project.fromFirestore),
+      ...results[1].docs.map(Project.fromFirestore),
+    ];
+    projects.sort((a, b) {
+      if (a.createdAt == null || b.createdAt == null) return 0;
+      return b.createdAt!.compareTo(a.createdAt!);
+    });
+    return projects;
+  }
 }

@@ -41,6 +41,30 @@ class StatusBadge extends StatelessWidget {
         : const StatusBadge(label: 'Normal', color: AppTheme.success);
   }
 
+  factory StatusBadge.briefStatus(String status) {
+    switch (status) {
+      case 'submitted':
+        return const StatusBadge(label: 'Gönderildi', color: AppTheme.primary);
+      case 'offer_sent':
+        return const StatusBadge(label: 'Teklif Gönderildi', color: AppTheme.success);
+      case 'draft':
+      default:
+        return const StatusBadge(label: 'Taslak', color: Colors.grey);
+    }
+  }
+
+  factory StatusBadge.offerStatus(String status) {
+    switch (status) {
+      case 'accepted':
+        return const StatusBadge(label: 'Kabul Edildi', color: AppTheme.success);
+      case 'rejected':
+        return const StatusBadge(label: 'Reddedildi', color: AppTheme.danger);
+      case 'pending':
+      default:
+        return const StatusBadge(label: 'Bekliyor', color: AppTheme.warning);
+    }
+  }
+
   factory StatusBadge.reportStatus(String status) {
     switch (status) {
       case 'reviewed':

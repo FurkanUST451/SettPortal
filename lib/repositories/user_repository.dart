@@ -64,6 +64,14 @@ class UserRepository {
     return doc.exists ? AppUser.fromFirestore(doc) : null;
   }
 
+  /// Fetched one doc at a time (not a single `whereIn`) since callers pass
+  /// small, ad-hoc id lists (e.g. a brief's `sentToIds`) where a batch query
+  /// isn't worth the added complexity.
+  Future<List<AppUser>> fetchByIds(List<String> uids) async {
+    final results = await Future.wait(uids.map(fetchById));
+    return results.whereType<AppUser>().toList();
+  }
+
   Future<FreelancerProfile?> fetchFreelancerProfile(String uid) async {
     final doc = await _freelancerCol.doc(uid).get();
     return doc.exists ? FreelancerProfile.fromFirestore(doc) : null;

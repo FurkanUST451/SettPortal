@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import '../screens/audit_log/audit_log_screen.dart';
 import '../screens/auth/login_screen.dart';
+import '../screens/briefs/brief_detail_screen.dart';
 import '../screens/conversations/conversation_detail_screen.dart';
 import '../screens/conversations/conversations_list_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
@@ -9,6 +10,7 @@ import '../screens/jobs/job_detail_screen.dart';
 import '../screens/jobs/jobs_list_screen.dart';
 import '../screens/moderation/moderation_list_screen.dart';
 import '../screens/moderation/work_detail_screen.dart';
+import '../screens/offers/offer_detail_screen.dart';
 import '../screens/reports/reports_list_screen.dart';
 import '../screens/security/security_settings_screen.dart';
 import '../screens/users/user_detail_screen.dart';
@@ -46,6 +48,16 @@ class AppPages {
     GetPage(
       name: AppRoutes.jobDetail,
       page: () => const JobDetailScreen(),
+      middlewares: [AdminGuardMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.briefDetail,
+      page: () => const BriefDetailScreen(),
+      middlewares: [AdminGuardMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.offerDetail,
+      page: () => const OfferDetailScreen(),
       middlewares: [AdminGuardMiddleware()],
     ),
     GetPage(
