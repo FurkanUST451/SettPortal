@@ -3,9 +3,13 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../controllers/brief_detail_controller.dart';
+import '../../core/constants.dart';
+import '../../core/theme.dart';
 import '../../models/app_user.dart';
+import '../../models/brief.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/admin_scaffold.dart';
+import '../../widgets/confirm_action_dialog.dart';
 import '../../widgets/status_badge.dart';
 
 class BriefDetailScreen extends StatefulWidget {
@@ -99,6 +103,34 @@ class _BriefDetailScreenState extends State<BriefDetailScreen> {
                               ? dateFmt.format(brief.createdAt!)
                               : '—',
                         ),
+                        const SizedBox(height: 20),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: [
+                            Obx(
+                              () => OutlinedButton.icon(
+                                onPressed: controller.actionLoading.value
+                                    ? null
+                                    : () => _onEditPressed(brief),
+                                icon: const Icon(Icons.edit_outlined),
+                                label: const Text('Düzenle'),
+                              ),
+                            ),
+                            Obx(
+                              () => OutlinedButton.icon(
+                                onPressed: controller.actionLoading.value
+                                    ? null
+                                    : _onDeletePressed,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.danger,
+                                ),
+                                icon: const Icon(Icons.delete_outline),
+                                label: const Text('Sil'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -165,6 +197,120 @@ class _BriefDetailScreenState extends State<BriefDetailScreen> {
         );
       }),
     );
+  }
+
+  Future<void> _onEditPressed(Brief brief) async {
+    final result = await _showEditBriefDialog(brief);
+    if (result != null) {
+      await controller.saveEdits(
+        title: result.title,
+        category: result.category,
+        status: result.status,
+      );
+    }
+  }
+
+  Future<void> _onDeletePressed() async {
+    final confirmed = await showConfirmActionDialog(
+      title: 'Brief\'i Sil',
+      message:
+          'Bu briefi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+      confirmLabel: 'Sil',
+      confirmColor: AppTheme.danger,
+    );
+    if (confirmed != null) {
+      await controller.delete();
+      Get.back();
+    }
+  }
+}
+
+class _BriefEditResult {
+  final String title;
+  final String category;
+  final String status;
+  const _BriefEditResult(this.title, this.category, this.status);
+}
+
+Future<_BriefEditResult?> _showEditBriefDialog(Brief brief) async {
+  final titleController = TextEditingController(text: brief.title);
+  final categoryController = TextEditingController(text: brief.category);
+  final status = RxString(brief.status);
+  const statusOptions = [
+    BriefStatus.draft,
+    BriefStatus.submitted,
+    BriefStatus.offerSent,
+  ];
+
+  final result = await Get.dialog<bool>(
+    AlertDialog(
+      title: const Text('Brief\'i Düzenle'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(labelText: 'Başlık'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: categoryController,
+              decoration: const InputDecoration(labelText: 'Kategori'),
+            ),
+            const SizedBox(height: 16),
+            Obx(
+              () => DropdownButtonFormField<String>(
+                initialValue: status.value,
+                decoration: const InputDecoration(labelText: 'Durum'),
+                items: statusOptions
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(_briefStatusLabel(s)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) status.value = v;
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(result: false),
+          child: const Text('Vazgeç'),
+        ),
+        FilledButton(
+          onPressed: () => Get.back(result: true),
+          child: const Text('Kaydet'),
+        ),
+      ],
+    ),
+  );
+
+  if (result != true) return null;
+  return _BriefEditResult(
+    titleController.text.trim(),
+    categoryController.text.trim(),
+    status.value,
+  );
+}
+
+String _briefStatusLabel(String status) {
+  switch (status) {
+    case BriefStatus.submitted:
+      return 'Gönderildi';
+    case BriefStatus.offerSent:
+      return 'Teklif Gönderildi';
+    case BriefStatus.draft:
+    default:
+      return 'Taslak';
   }
 }
 

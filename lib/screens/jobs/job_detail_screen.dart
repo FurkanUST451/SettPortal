@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../controllers/job_detail_controller.dart';
+import '../../models/app_user.dart';
+import '../../routes/app_routes.dart';
 import '../../widgets/admin_scaffold.dart';
 import '../../widgets/status_badge.dart';
 
@@ -47,6 +49,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         }
         final brief = controller.brief.value;
         final offer = controller.offer.value;
+        final client = controller.client.value;
+        final freelancer = controller.freelancer.value;
 
         return SingleChildScrollView(
           child: ConstrainedBox(
@@ -76,8 +80,31 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                         ),
                         const SizedBox(height: 16),
                         _InfoRow('Proje ID', project.id),
-                        _InfoRow('Client ID', project.clientId),
-                        _InfoRow('Freelancer ID', project.freelancerId),
+                        _InfoRow(
+                          'Müşteri',
+                          _userLabel(client, project.clientId),
+                          onTap: client == null
+                              ? null
+                              : () => Get.toNamed(
+                                  AppRoutes.userDetail,
+                                  arguments: client.id,
+                                ),
+                        ),
+                        _InfoRow('Müşteri E-posta', client?.email ?? '—'),
+                        _InfoRow(
+                          'Freelancer',
+                          _userLabel(freelancer, project.freelancerId),
+                          onTap: freelancer == null
+                              ? null
+                              : () => Get.toNamed(
+                                  AppRoutes.userDetail,
+                                  arguments: freelancer.id,
+                                ),
+                        ),
+                        _InfoRow(
+                          'Freelancer E-posta',
+                          freelancer?.email ?? '—',
+                        ),
                         _InfoRow('Bütçe', currencyFmt.format(project.budget)),
                         if (project.category != null)
                           _InfoRow('Kategori', project.category!),
@@ -167,13 +194,28 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   }
 }
 
+String _userLabel(AppUser? user, String fallbackId) {
+  if (user == null) return fallbackId;
+  return user.fullName.isEmpty ? user.email : user.fullName;
+}
+
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-  const _InfoRow(this.label, this.value);
+  final VoidCallback? onTap;
+  const _InfoRow(this.label, this.value, {this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final valueWidget = Text(
+      value,
+      style: onTap == null
+          ? null
+          : const TextStyle(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+            ),
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -183,7 +225,11 @@ class _InfoRow extends StatelessWidget {
             width: 160,
             child: Text(label, style: const TextStyle(color: Colors.black54)),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: onTap == null
+                ? valueWidget
+                : InkWell(onTap: onTap, child: valueWidget),
+          ),
         ],
       ),
     );

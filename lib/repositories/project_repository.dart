@@ -36,9 +36,44 @@ class ProjectRepository {
     return doc.exists ? Project.fromFirestore(doc) : null;
   }
 
+  Future<List<Brief>> fetchBriefsPage({
+    String? status,
+    String? startAfterCreatedAt,
+    int limit = pageSize,
+  }) async {
+    Query<Map<String, dynamic>> q = _briefCol.orderBy(
+      'createdAt',
+      descending: true,
+    );
+    if (status != null && status.isNotEmpty) {
+      q = q.where('status', isEqualTo: status);
+    }
+    q = q.limit(limit);
+    if (startAfterCreatedAt != null) q = q.startAfter([startAfterCreatedAt]);
+    final snap = await q.get();
+    return snap.docs.map(Brief.fromFirestore).toList();
+  }
+
   Future<Brief?> fetchBrief(String id) async {
     final doc = await _briefCol.doc(id).get();
     return doc.exists ? Brief.fromFirestore(doc) : null;
+  }
+
+  Future<void> updateBrief(
+    String id, {
+    required String title,
+    required String category,
+    required String status,
+  }) async {
+    await _briefCol.doc(id).update({
+      'title': title,
+      'category': category,
+      'status': status,
+    });
+  }
+
+  Future<void> deleteBrief(String id) async {
+    await _briefCol.doc(id).delete();
   }
 
   Future<Offer?> fetchOffer(String id) async {

@@ -72,6 +72,8 @@ class AuditAction {
   static const deleteWorkLike = 'delete_work_like';
   static const promoteAdmin = 'promote_admin';
   static const demoteAdmin = 'demote_admin';
+  static const editBrief = 'edit_brief';
+  static const deleteBrief = 'delete_brief';
 }
 
 /// Firebase App Check config. Get this from Firebase Console → App Check →

@@ -47,6 +47,18 @@ class AuditLogService {
     targetId: uid,
   );
 
+  Future<void> logEditBrief(String briefId) => log(
+    action: AuditAction.editBrief,
+    targetType: 'brief',
+    targetId: briefId,
+  );
+
+  Future<void> logDeleteBrief(String briefId) => log(
+    action: AuditAction.deleteBrief,
+    targetType: 'brief',
+    targetId: briefId,
+  );
+
   Stream<QuerySnapshot<Map<String, dynamic>>> watchRecent({int limit = 200}) {
     return _col.orderBy('createdAt', descending: true).limit(limit).snapshots();
   }
