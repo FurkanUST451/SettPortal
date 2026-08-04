@@ -26,6 +26,7 @@ class UserDetailController extends GetxController {
   final Rxn<AppUser> user = Rxn<AppUser>();
   final Rxn<FreelancerProfile> freelancerProfile = Rxn<FreelancerProfile>();
   final RxBool loading = true.obs;
+  final RxnString error = RxnString();
   final RxBool actionLoading = false.obs;
   final RxBool isAdmin = false.obs;
   final RxBool adminStatusLoading = true.obs;
@@ -79,13 +80,19 @@ class UserDetailController extends GetxController {
 
   Future<void> load() async {
     loading.value = true;
-    final u = await _repo.fetchById(uid);
-    user.value = u;
-    if (u?.role == UserRole.freelancer) {
-      freelancerProfile.value = await _repo.fetchFreelancerProfile(uid);
+    error.value = null;
+    try {
+      final u = await _repo.fetchById(uid);
+      user.value = u;
+      if (u?.role == UserRole.freelancer) {
+        freelancerProfile.value = await _repo.fetchFreelancerProfile(uid);
+      }
+      await _auditLog.logViewUserDetail(uid);
+    } catch (e) {
+      error.value = e.toString();
+    } finally {
+      loading.value = false;
     }
-    await _auditLog.logViewUserDetail(uid);
-    loading.value = false;
   }
 
   /// Admin status lives in a Firebase Auth custom claim, not Firestore, so

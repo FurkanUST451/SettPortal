@@ -44,9 +44,11 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.briefStatus(String status) {
     switch (status) {
       case 'submitted':
-        return const StatusBadge(label: 'Gönderildi', color: AppTheme.primary);
+        return const StatusBadge(label: 'Anlaşma Bekliyor', color: AppTheme.warning);
       case 'offer_sent':
-        return const StatusBadge(label: 'Teklif Gönderildi', color: AppTheme.success);
+        return const StatusBadge(label: 'Teklif Gönderildi', color: Colors.grey);
+      case 'cancelled':
+        return const StatusBadge(label: 'İptal Edildi', color: AppTheme.danger);
       case 'draft':
       default:
         return const StatusBadge(label: 'Taslak', color: Colors.grey);

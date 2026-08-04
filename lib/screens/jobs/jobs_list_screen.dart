@@ -120,11 +120,15 @@ class _BriefsTab extends StatelessWidget {
                   ),
                   DropdownMenuItem(
                     value: BriefStatus.submitted,
-                    child: Text('Gönderildi'),
+                    child: Text('Anlaşma Bekliyor'),
                   ),
                   DropdownMenuItem(
                     value: BriefStatus.offerSent,
                     child: Text('Teklif Gönderildi'),
+                  ),
+                  DropdownMenuItem(
+                    value: BriefStatus.cancelled,
+                    child: Text('İptal Edildi'),
                   ),
                 ],
                 onChanged: c.setStatusFilter,

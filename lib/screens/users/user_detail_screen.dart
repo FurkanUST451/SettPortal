@@ -47,6 +47,15 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         if (controller.loading.value) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (controller.error.value != null) {
+          return Center(
+            child: Text(
+              'Kullanıcı yüklenemedi: ${controller.error.value}',
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
+          );
+        }
         final user = controller.user.value;
         if (user == null) {
           return const Center(child: Text('Kullanıcı bulunamadı.'));
@@ -512,6 +521,15 @@ class _BriefRow extends StatelessWidget {
   final Brief brief;
   const _BriefRow({required this.brief});
 
+  String? get _notePreview {
+    final notes = brief.answers['notes'];
+    if (notes is! String || notes.trim().isEmpty) return null;
+    final words = notes.trim().split(RegExp(r'\s+'));
+    const wordLimit = 8;
+    final preview = words.take(wordLimit).join(' ');
+    return words.length > wordLimit ? '$preview…' : preview;
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateFmt = DateFormat('dd.MM.yyyy HH:mm');
@@ -535,6 +553,20 @@ class _BriefRow extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.black54,
+                      ),
+                    ),
+                  if (_notePreview != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        _notePreview!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                     ),
                 ],

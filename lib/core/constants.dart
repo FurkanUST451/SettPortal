@@ -41,6 +41,7 @@ class BriefStatus {
   static const draft = 'draft';
   static const submitted = 'submitted';
   static const offerSent = 'offer_sent';
+  static const cancelled = 'cancelled';
 }
 
 class OfferStatus {

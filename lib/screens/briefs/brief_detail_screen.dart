@@ -240,6 +240,7 @@ Future<_BriefEditResult?> _showEditBriefDialog(Brief brief) async {
     BriefStatus.draft,
     BriefStatus.submitted,
     BriefStatus.offerSent,
+    BriefStatus.cancelled,
   ];
 
   final result = await Get.dialog<bool>(
@@ -305,9 +306,11 @@ Future<_BriefEditResult?> _showEditBriefDialog(Brief brief) async {
 String _briefStatusLabel(String status) {
   switch (status) {
     case BriefStatus.submitted:
-      return 'Gönderildi';
+      return 'Anlaşma Bekliyor';
     case BriefStatus.offerSent:
       return 'Teklif Gönderildi';
+    case BriefStatus.cancelled:
+      return 'İptal Edildi';
     case BriefStatus.draft:
     default:
       return 'Taslak';
